@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16.1-alpine3.18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - postgres_data:/var/lib/postgresql/data
+
+  nodejs_task:
+    image: FROM node:20.10-alpine3.17  # Utilizando Node.js versión 14 como ejemplo
+    working_dir: /app
+    volumes:
+      - ./tareas:/app
+    command: ["npm", "start"]  # Ajusta según la forma en que inicies tu aplicación Node.js
+    ports:
+      - "3000:3000"  # Ajusta el puerto según la configuración de tu aplicación
+    depends_on:
+      - postgres
+
+  nodejs_users:
+    image: FROM node:20.10-alpine3.17  # Utilizando Node.js versión 14 como ejemplo
+    working_dir: /app
+    volumes:
+      - ./usuarios:/app
+    command: ["npm", "start"]  # Ajusta según la forma en que inicies tu aplicación Node.js
+    ports:
+      - "3001:3000"  # Ajusta el puerto según la configuración de tu aplicación
+    depends_on:
+      - postgres
+volumes:
+  postgres_data:
