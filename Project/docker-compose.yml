@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16.1-alpine3.18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+
+  nodejs_main:
+    image: node:20.10-alpine3.17
+    working_dir: /app
+    volumes:
+      - ./app:/app
+      - ./config:/config
+    command: ["node", "app.js"]
+    ports:
+      - "3000:3000"  # Puerto para acceder a app.js
+    depends_on:
+      - postgres
+
+  nodejs_task:
+    image: node:20.10-alpine3.17
+    working_dir: /tareas
+    volumes:
+      - ./tareas:/tareas
+      - ./config:/config
+    command: ["node", "tareas.js"]
+    ports:
+      - "3001:3000"  # Puerto para acceder a tareas.js
+    depends_on:
+      - postgres
+
+  nodejs_users:
+    image: node:20.10-alpine3.17
+    working_dir: /usuarios
+    volumes:
+      - ./usuarios:/usuarios
+      - ./config:/config
+    command: ["node", "usuarios.js"]
+    ports:
+      - "3002:3000"  # Puerto para acceder a usuarios.js
+    depends_on:
+      - postgres
