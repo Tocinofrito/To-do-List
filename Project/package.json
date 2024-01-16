@@ -1,0 +1,24 @@
+{
+  "name": "todo-list-dockerized",
+  "version": "1.0.0",
+  "description": "A dockerized todo-list for tesis",
+  "main": "app/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tocinofrito/To-do-List.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tocinofrito/To-do-List/issues"
+  },
+  "homepage": "https://github.com/Tocinofrito/To-do-List#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3"
+  }
+}
