@@ -1,69 +1,63 @@
-//Declaramos la variable de express para el servidor
-const express = require('express')
-//Variable para manejo de la bd postgres
-const { Client } = require('pg')
-//Variables para manejar JSON y usar el archivo config y jsonwebtoken para seguridad
-const fs = require('fs')
-//jsonwebtoken es un mecanismo para propagar información entre dos partes de forma segura
-const wt = require('jsonwebtoken')
+const express = require('express');
+const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
+const fs = require('fs');
 
-//Creamos variable app para manejarr el sb y el puero en el que se manejará
 
-const app = express()
-//Variable de cliente para la conexión a la base de datos
-let client
-//Se hace de manera síncrona debido a que debe tener los datos para configurara la conexión a la base de datos antes
-//De ejecutar esa parte de código
+const app = express();
+const port = 3000;
+
 const configData = fs.readFileSync('../config/config-tareas.json', 'utf-8')
-//Conprobamos la existencia del archvio
+
 if(!configData){
   console.error('Error al leer el archivo de configuración')
   process.exit(1)
 }
-//Al hacer parse al JSON podemos acceder a sus valores con el .
 const config = JSON.parse(configData)
 
-//Conexión a la bse de datos
-client = new Client({
+const pool = new Pool({
   user: config.user,
   host: config.host,
   database: config.database,
   password: config.password,
-  port: config.port
-})
-//Comprobamos conexión a bd
-client.connect((err) =>{
-  if(err){
-    console.error('Error al conectar a la base de datos:', err)
-    process.exit(1)
+  port: config.port,
+});
+
+app.use(express.json());
+
+// Middleware para verificar el token JWT
+const verifyToken = (req, res, next) => {
+  const token = req.headers['authorization'];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Token no proporcionado' });
   }
-  console.log('Conectado a la base de datos')
-})
-//Ruta a llamar para lista de tareas por usuario
-//Parámetros en la ruta jwt:
-app.get('/consulta/:data?',(req, res) =>{
-  const SecretKey = config.SecretKey
-  const token = req.params.data
-  if(!token){
-    return res.status(401).sendStatus('Token JWT no proporcionado')
-  }
-  //Comprobamos el token sea correcto
-  wt.verify(token, SecretKey, (err, decoded) =>{
-    if(err){
-      console.error('Error al verificar el token:',err)
-      return res.status(401).sendStatus('Token JWT no válido')
+
+  jwt.verify(token, 'tu_secreto_secreto', (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: 'Token no válido' });
     }
-    const tipo = decoded.tipo
-    const id = decoded.id
-  })
-  //Realizamos la consulta y retornamos eljson
-  switch (tipo === '1') {
-    case value:
-      //Consulta de las tareas de todos los usuarios
-      const query = "SELECT * FROM tasks"
-      break;
-  
-    default:
-      break;
+
+    req.userId = decoded.userId;
+    next();
+  });
+};
+
+// Endpoint para obtener tareas por usuario
+app.get('/tareas', verifyToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const result = await pool.query('SELECT * FROM tasks WHERE user_id = $1', [userId]);
+    const tasks = result.rows;
+
+    res.json({ tasks });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener tareas del usuario' });
   }
-})
+});
+
+app.listen(port, () => {
+  console.log(`Servidor de tareas iniciado en http://localhost:${port}`);
+});
