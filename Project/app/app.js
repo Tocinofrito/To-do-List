@@ -5,6 +5,28 @@ const axios = require('axios');
 const app = express();
 const port = 3000;
 
+function verifyToken(req, res, next) {
+  const token = req.cookies.token || req.headers['authorization'];
+
+  if (!token) {
+    // Si no hay token, continuar con la solicitud
+    return next();
+  }
+
+  axios.post('http://localhost:3000/verify-token', { token })
+    .then(response => {
+      if (response.data.valid) {
+        // Si el token es válido, almacenar el usuario en la solicitud para su posterior uso
+        req.user = response.data.decoded;
+      }
+      next();
+    })
+    .catch(error => {
+      console.error(error);
+      next();
+    });
+}
+
 // Configuración del middleware para servir archivos estáticos desde la carpeta 'public'
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -36,27 +58,7 @@ app.get('/', verifyToken, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'todo-list.html'));
 });
 
-function verifyToken(req, res, next) {
-  const token = req.cookies.token || req.headers['authorization'];
 
-  if (!token) {
-    // Si no hay token, continuar con la solicitud
-    return next();
-  }
-
-  axios.post('http://localhost:3000/verify-token', { token })
-    .then(response => {
-      if (response.data.valid) {
-        // Si el token es válido, almacenar el usuario en la solicitud para su posterior uso
-        req.user = response.data.decoded;
-      }
-      next();
-    })
-    .catch(error => {
-      console.error(error);
-      next();
-    });
-}
 
 app.listen(port, () => {
   console.log(`Servidor de la aplicación iniciado en http://localhost:${port}`);
