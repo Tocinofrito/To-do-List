@@ -34,7 +34,7 @@ app.post('/register', async(req,res) =>{
     
     const result = await pool.query(
       'INSERT INTO users(username, password_hash) VALUES ($1, $2) RETURNING *',
-      [username, password_nHash]
+      [username, password_Hash]
     );
 
     const user = result.rows[0];
@@ -51,7 +51,7 @@ app.post('/login', async(req, res)=>{
     const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
 
-    if(!user || !(await bcrypt.compare(password, user.password_Hash))){
+    if(!user || !(await bcrypt.compare(password, user.password_hash))){
       return res.status(401).json({ error: 'Credencialess incorrectas'});
     }
 
@@ -66,6 +66,20 @@ app.post('/login', async(req, res)=>{
     res.status(500).json({ error: 'Error al iniciar sesión' });
   }
 });
+
+// Endpoint para verificar la validez del token
+app.post('/verify-token', verifyToken, (req, res) => {
+  if (req.user) {
+    // El token es válido, devolver información decodificada
+    res.json({ valid: true, decoded: req.user });
+  } else {
+    // El token no es válido
+    res.json({ valid: false });
+  }
+});
+
+// ...
+
 
 app.listen(port, ()=>{
   console.log(`Servidor iniciado en http://localhost:${port}`)
